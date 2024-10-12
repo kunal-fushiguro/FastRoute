@@ -7,7 +7,8 @@
     "scripts": {
         "build": "tsup",
         "prepare": "husky",
-        "format:fix": "prettier . --fix"
+        "format:fix": "prettier . --fix",
+        "dev": "ts-node src/example/example.ts"
     },
     "keywords": [
         "expressjs",
@@ -24,9 +25,11 @@
     "devDependencies": {
         "@commitlint/cli": "^19.5.0",
         "@commitlint/config-conventional": "^19.5.0",
+        "@types/node": "^22.7.5",
         "husky": "^9.1.6",
         "lint-staged": "^15.2.10",
         "prettier": "^3.3.3",
+        "ts-node": "^10.9.2",
         "tsup": "^8.3.0",
         "typescript": "^5.6.3"
     }
