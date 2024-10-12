@@ -1,0 +1,33 @@
+{
+  "name": "fastroute",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "prepare": "husky",
+    "format:fix": "prettier . --fix"
+  },
+  "keywords": [
+    "expressjs",
+    "fastroute"
+  ],
+  "lint-staged": {
+    "*.ts": [
+      "npm run format:fix"
+    ]
+  },
+  "author": "natwarlal-uzumaki",
+  "license": "MIT",
+  "description": "fastroute is a package that is just like express build to learn how express is build",
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.3"
+  }
+}
