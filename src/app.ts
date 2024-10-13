@@ -19,10 +19,50 @@ class App {
     }
 
     // handle urls
-    handleAllRequest(req: IncomingMessage, res: ServerResponse) {
+    private handleAllRequest(req: IncomingMessage, res: ServerResponse) {
+        const method = req.method as Method
+        const url = req.url || "/"
+
         console.log(`Route : ${req.url} , METHOD : ${req.method}`)
 
-        res.end("hello-world")
+        const routerHandler = this.routes.get(method)?.get(url)
+
+        if (routerHandler) {
+            routerHandler(req, res)
+        } else {
+            res.statusCode = 404
+            res.end("404 Not Found")
+        }
+    }
+
+    // route
+
+    private route(method: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        if (!this.routes.has(method)) {
+            this.routes.set(method, new Map())
+        }
+        this.routes.get(method)?.set(path, cb)
+    }
+
+    // create a routes
+    get(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        this.route("GET", path, cb)
+    }
+
+    post(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        this.route("POST", path, cb)
+    }
+
+    patch(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        this.route("PATCH", path, cb)
+    }
+
+    put(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        this.route("PUT", path, cb)
+    }
+
+    delete(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        this.route("DELETE", path, cb)
     }
 }
 
