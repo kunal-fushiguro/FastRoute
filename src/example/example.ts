@@ -1,16 +1,26 @@
 import { App } from "../index"
+import { IncomingMessage, ServerResponse } from "http"
 
 const app = new App()
 
-app.get("GET", "/", (req, res) => {
-    console.log(`Path : ${req.url} , method : ${req.method}`)
-    const data = {
-        message: "hello"
-    }
+// function middlewares(req: IncomingMessage, res: ServerResponse, next: () => void) {
+//     console.log("Hello from middlewares")
+//     next()
+// }
 
-    res.writeHead(200, { "Content-type": "application/json" })
-    res.end(JSON.stringify(data))
-})
+app.get(
+    "/",
+    (req, res, next) => {
+        if (!next) {
+            return
+        }
+        console.log("Hello by middleware")
+        next()
+    },
+    (req: IncomingMessage, res: ServerResponse) => {
+        res.end("hello world")
+    }
+)
 
 app.listen(8080, () => {
     console.log(`Server Started on PORT : 8080`)

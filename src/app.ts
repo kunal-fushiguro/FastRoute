@@ -2,10 +2,13 @@ import { createServer, IncomingMessage, ServerResponse } from "http"
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
+// Updated Handler type
+type Handler = (request: IncomingMessage, response: ServerResponse, next?: () => void) => void
+
 class App {
-    private routes: Map<Method, Map<string, (request: any, response: any) => void>>
+    private routes: Map<Method, Map<string, Handler[]>>
     private createServer: import("http").Server<typeof import("http").IncomingMessage, typeof import("http").ServerResponse>
-    //  initialize a server
+
     constructor() {
         this.routes = new Map()
         this.createServer = createServer((req, res) => {
@@ -13,58 +16,72 @@ class App {
         })
     }
 
-    // listening a server on PORT
+    // Listening to the server on a PORT
     listen(port: number, cb: () => void) {
         this.createServer.listen(port, cb)
     }
 
-    // handle urls
+    // Handle requests
     private handleAllRequest(req: IncomingMessage, res: ServerResponse) {
         const method = req.method as Method
         const url = req.url || "/"
 
         console.log(`Route : ${req.url} , METHOD : ${req.method}`)
 
-        const routerHandler = this.routes.get(method)?.get(url)
+        const routeHandlers = this.routes.get(method)?.get(url)
 
-        if (routerHandler) {
-            routerHandler(req, res)
+        if (routeHandlers) {
+            this.runHandlers(req, res, routeHandlers)
         } else {
             res.statusCode = 404
             res.end("404 Not Found")
         }
     }
 
-    // route
+    // Run all handlers (middlewares + final handler) sequentially
+    private runHandlers(req: IncomingMessage, res: ServerResponse, handlers: Handler[]) {
+        let index = -1
 
-    private route(method: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
+        const runNext = () => {
+            index++
+            if (index >= handlers.length) {
+                return
+            }
+            handlers[index](req, res, runNext)
+        }
+
+        runNext()
+    }
+
+    // Route method for registering routes with multiple handlers (middlewares + route)
+    private route(method: Method, path: string, ...handlers: Handler[]) {
         if (!this.routes.has(method)) {
             this.routes.set(method, new Map())
         }
-        this.routes.get(method)?.set(path, cb)
+        this.routes.get(method)?.set(path, handlers)
     }
 
-    // create a routes
-    get(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
-        this.route("GET", path, cb)
+    // Registering routes for different HTTP methods
+    get(path: string, ...handlers: Handler[]) {
+        this.route("GET", path, ...handlers)
     }
 
-    post(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
-        this.route("POST", path, cb)
+    post(path: string, ...handlers: Handler[]) {
+        this.route("POST", path, ...handlers)
     }
 
-    patch(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
-        this.route("PATCH", path, cb)
+    patch(path: string, ...handlers: Handler[]) {
+        this.route("PATCH", path, ...handlers)
     }
 
-    put(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
-        this.route("PUT", path, cb)
+    put(path: string, ...handlers: Handler[]) {
+        this.route("PUT", path, ...handlers)
     }
 
-    delete(METHOD: Method, path: string, cb: (request: IncomingMessage, response: ServerResponse) => void) {
-        this.route("DELETE", path, cb)
+    delete(path: string, ...handlers: Handler[]) {
+        this.route("DELETE", path, ...handlers)
     }
 }
 
-export { App }
+export { App, IncomingMessage, ServerResponse }
 
