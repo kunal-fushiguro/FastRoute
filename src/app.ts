@@ -3,7 +3,7 @@ import { createServer, IncomingMessage, ServerResponse } from "http"
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
 // Updated Handler type
-type Handler = (request: IncomingMessage, response: ServerResponse, next?: () => void) => void
+type Handler = (request: IncomingMessage, response: ServerResponse, next: () => void) => void
 
 class App {
     private routes: Map<Method, Map<string, Handler[]>>
@@ -85,3 +85,4 @@ class App {
 
 export { App, IncomingMessage, ServerResponse }
 
+// handle params query
