@@ -3,7 +3,7 @@ import { createServer, IncomingMessage, ServerResponse } from "http"
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
 // Updated Handler type
-type Handler = (request: IncomingMessage, response: ServerResponse, next: () => void) => void
+type Handler = (request: IncomingMessage, response: ServerResponse, next: () => void, querys: object) => void
 
 class App {
     private routes: Map<Method, Map<string, Handler[]>>
@@ -28,10 +28,21 @@ class App {
 
         console.log(`Route : ${req.url} , METHOD : ${req.method}`)
 
-        const routeHandlers = this.routes.get(method)?.get(url)
+        const newUrl = req.url?.split("?") || url
+        const spitFromAnd = newUrl[1].split("&")
+        const querys: {
+            [key: string]: any
+        } = {}
+        spitFromAnd.map((querya) => {
+            const keyAndValue = querya.split("=")
+            querys[keyAndValue[0]] = keyAndValue[1]
+        })
+        // console.log(querys)
+
+        const routeHandlers = this.routes.get(method)?.get(newUrl[0])
 
         if (routeHandlers) {
-            this.runHandlers(req, res, routeHandlers)
+            this.runHandlers(req, res, routeHandlers, querys)
         } else {
             res.statusCode = 404
             res.end("404 Not Found")
@@ -39,7 +50,14 @@ class App {
     }
 
     // Run all handlers (middlewares + final handler) sequentially
-    private runHandlers(req: IncomingMessage, res: ServerResponse, handlers: Handler[]) {
+    private runHandlers(
+        req: IncomingMessage,
+        res: ServerResponse,
+        handlers: Handler[],
+        querys: {
+            [key: string]: any
+        }
+    ) {
         let index = -1
 
         const runNext = () => {
@@ -47,7 +65,7 @@ class App {
             if (index >= handlers.length) {
                 return
             }
-            handlers[index](req, res, runNext)
+            handlers[index](req, res, runNext, querys)
         }
 
         runNext()
@@ -85,4 +103,3 @@ class App {
 
 export { App, IncomingMessage, ServerResponse }
 
-// handle params query
