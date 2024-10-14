@@ -30,6 +30,7 @@ class App {
 
         const newUrl = req.url?.split("?") || url
         const spitFromAnd = newUrl[1].split("&")
+        // querys handles
         const querys: {
             [key: string]: any
         } = {}
@@ -37,7 +38,6 @@ class App {
             const keyAndValue = querya.split("=")
             querys[keyAndValue[0]] = keyAndValue[1]
         })
-        // console.log(querys)
 
         const routeHandlers = this.routes.get(method)?.get(newUrl[0])
 
