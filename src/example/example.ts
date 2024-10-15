@@ -21,12 +21,15 @@ example.get("/hello", (req: IncomingMessage, res: ServerResponse) => {
 })
 
 example.get(
-    "/hello1",
+    "/hello1/:name",
     (
         req: IncomingMessage,
         res: ServerResponse,
         _,
         querys: {
+            [key: string]: any
+        },
+        params: {
             [key: string]: any
         }
     ) => {
@@ -35,15 +38,11 @@ example.get(
 
         res.statusCode = 200
         res.setHeader("Content-Type", "text/plain")
-        res.end("oedasfbudsafakjdfjkakjfakkdjashdsa")
+        const name = params.name
+        console.log(params.name)
+        res.end("Name : " + JSON.stringify(name))
     }
 )
-
-example.get("/hello2", (req: IncomingMessage, res: ServerResponse) => {
-    res.statusCode = 200
-    res.setHeader("Content-Type", "text/plain")
-    res.end("oedasfbudsafakjdfjkakjfakkdjashdsa")
-})
 
 example.listen(8080, () => {
     console.log(`Server Started on PORT : 8080`)

@@ -1,12 +1,10 @@
 import { createServer, IncomingMessage, ServerResponse } from "http"
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
-
-// Updated Handler type
-type Handler = (request: IncomingMessage, response: ServerResponse, next: () => void, querys: object) => void
+type Handler = (request: IncomingMessage, response: ServerResponse, next: () => void, querys: object, params: object) => void
 
 class App {
-    private routes: Map<Method, Map<string, Handler[]>>
+    private routes: Map<Method, { pathRegex: RegExp; paramNames: string[]; handlers: Handler[] }[]>
     private createServer: import("http").Server<typeof import("http").IncomingMessage, typeof import("http").ServerResponse>
 
     constructor() {
@@ -28,25 +26,43 @@ class App {
 
         console.log(`Route : ${req.url} , METHOD : ${req.method}`)
 
-        const newUrl = req.url?.split("?") || url
-        const spitFromAnd = newUrl[1].split("&")
-        // querys handles
-        const querys: {
-            [key: string]: any
-        } = {}
-        spitFromAnd.map((querya) => {
-            const keyAndValue = querya.split("=")
-            querys[keyAndValue[0]] = keyAndValue[1]
-        })
+        const [path, queryString] = url.split("?")
+        const querys: { [key: string]: any } = {}
+        if (queryString) {
+            queryString.split("&").forEach((query) => {
+                const [key, value] = query.split("=")
+                querys[key] = value
+            })
+        }
 
-        const routeHandlers = this.routes.get(method)?.get(newUrl[0])
+        const routeHandlers = this.matchRoute(method, path)
 
         if (routeHandlers) {
-            this.runHandlers(req, res, routeHandlers, querys)
+            const { handlers, params } = routeHandlers
+            this.runHandlers(req, res, handlers, querys, params)
         } else {
             res.statusCode = 404
             res.end("404 Not Found")
         }
+    }
+
+    // Match route and extract params
+    private matchRoute(method: Method, path: string) {
+        const routes = this.routes.get(method)
+        if (!routes) return null
+
+        for (const route of routes) {
+            const match = path.match(route.pathRegex)
+            if (match) {
+                const params: { [key: string]: string } = {}
+                route.paramNames.forEach((paramName, index) => {
+                    params[paramName] = match[index + 1]
+                })
+                return { handlers: route.handlers, params }
+            }
+        }
+
+        return null
     }
 
     // Run all handlers (middlewares + final handler) sequentially
@@ -54,9 +70,8 @@ class App {
         req: IncomingMessage,
         res: ServerResponse,
         handlers: Handler[],
-        querys: {
-            [key: string]: any
-        }
+        querys: { [key: string]: any },
+        params: { [key: string]: string }
     ) {
         let index = -1
 
@@ -65,18 +80,26 @@ class App {
             if (index >= handlers.length) {
                 return
             }
-            handlers[index](req, res, runNext, querys)
+            handlers[index](req, res, runNext, querys, params)
         }
 
         runNext()
     }
 
-    // Route method for registering routes with multiple handlers (middlewares + route)
+    // Register routes with support for params
     private route(method: Method, path: string, ...handlers: Handler[]) {
         if (!this.routes.has(method)) {
-            this.routes.set(method, new Map())
+            this.routes.set(method, [])
         }
-        this.routes.get(method)?.set(path, handlers)
+
+        const paramNames: string[] = []
+        const pathRegex = path.replace(/:([^\/]+)/g, (_, paramName) => {
+            paramNames.push(paramName)
+            return "([^\\/]+)"
+        })
+        const regex = new RegExp(`^${pathRegex}$`)
+
+        this.routes.get(method)?.push({ pathRegex: regex, paramNames, handlers })
     }
 
     // Registering routes for different HTTP methods
